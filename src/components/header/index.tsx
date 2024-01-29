@@ -18,14 +18,14 @@ type IUser = {
 };
 
 export const Header: React.FC<RefineThemedLayoutV2HeaderProps> = ({
-  isSticky = true,
+  sticky = true,
 }) => {
   const { mode, setMode } = useContext(ColorModeContext);
 
   const { data: user } = useGetIdentity<IUser>();
 
   return (
-    <AppBar position={isSticky ? "sticky" : "relative"}>
+    <AppBar position={sticky ? "sticky" : "relative"} elevation={0} sx={{background:"#fcfcfc"}}>
       <Toolbar>
         <Stack
           direction="row"
@@ -40,15 +40,7 @@ export const Header: React.FC<RefineThemedLayoutV2HeaderProps> = ({
             justifyContent="flex-end"
             alignItems="center"
           >
-            <IconButton
-              color="inherit"
-              onClick={() => {
-                setMode();
-              }}
-            >
-              {mode === "dark" ? <LightModeOutlined /> : <DarkModeOutlined />}
-            </IconButton>
-
+            
             {(user?.avatar || user?.name) && (
               <Stack
                 direction="row"
@@ -63,6 +55,7 @@ export const Header: React.FC<RefineThemedLayoutV2HeaderProps> = ({
                         xs: "none",
                         sm: "inline-block",
                       },
+                      color:"black"
                     }}
                     variant="subtitle2"
                   >

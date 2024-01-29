@@ -14,6 +14,14 @@ import {
   ThemedLayoutV2,
 } from "@refinedev/mui";
 
+import {
+  AccountCircleOutlined,
+  ChatBubbleOutline,
+  PeopleAltOutlined,
+  StarOutlineRounded,
+  VillaOutlined,
+} from "@mui/icons-material";
+
 import CssBaseline from "@mui/material/CssBaseline";
 import GlobalStyles from "@mui/material/GlobalStyles";
 import routerBindings, {
@@ -25,24 +33,31 @@ import routerBindings, {
 import dataProvider from "@refinedev/simple-rest";
 import axios from "axios";
 import { CredentialResponse } from "interfaces/google";
+
 import {
-  BlogPostCreate,
-  BlogPostEdit,
-  BlogPostList,
-  BlogPostShow,
-} from "pages/blog-posts";
+  Login,
+  CustomDashboard,
+  Agents,
+  MyProfile,
+  PropertyDetails,
+  AllProperties,
+  CreateProperty,
+  AgentProfile,
+  EditProperty,
+} from "pages";
 import {
-  CategoryCreate,
-  CategoryEdit,
-  CategoryList,
-  CategoryShow,
-} from "pages/categories";
-import { Login } from "pages/login";
-import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
+  BrowserRouter,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+} from "react-router-dom";
 import { parseJwt } from "utils/parse-jwt";
 import { Header } from "./components/header";
 import { ColorModeContextProvider } from "./contexts/color-mode";
 
+import { CustomSider } from "components";
+import { MuiInferencer } from "@refinedev/inferencer/mui";
 const axiosInstance = axios.create();
 axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
@@ -58,14 +73,36 @@ function App() {
     login: async ({ credential }: CredentialResponse) => {
       const profileObj = credential ? parseJwt(credential) : null;
 
+      // Save the user to the Database
+
       if (profileObj) {
-        localStorage.setItem(
-          "user",
+        // Save the user
+        const response = await axiosInstance.post(
+          "http://localhost:8080/api/v1/owners",
           JSON.stringify({
-            ...profileObj,
+            name: profileObj.name,
+            email: profileObj.email,
             avatar: profileObj.picture,
-          })
+          }),
+          { headers: { "Content-Type": "application/json" } }
         );
+
+        const data = response.data;
+
+        console.log(data);
+
+        if (response.status === 200) {
+          localStorage.setItem(
+            "user",
+            JSON.stringify({
+              ...profileObj,
+              avatar: profileObj.picture,
+              userId: data.id,
+            })
+          );
+        } else {
+          return Promise.reject();
+        }
 
         localStorage.setItem("token", `${credential}`);
 
@@ -132,7 +169,6 @@ function App() {
 
   return (
     <BrowserRouter>
-      <GitHubBanner />
       <RefineKbarProvider>
         <ColorModeContextProvider>
           <CssBaseline />
@@ -140,30 +176,19 @@ function App() {
           <RefineSnackbarProvider>
             <DevtoolsProvider>
               <Refine
-                dataProvider={dataProvider("https://api.fake-rest.refine.dev")}
+                dataProvider={dataProvider("http://localhost:8080/api/v1")}
                 notificationProvider={notificationProvider}
                 routerProvider={routerBindings}
                 authProvider={authProvider}
+                DashboardPage={CustomDashboard}
                 resources={[
                   {
-                    name: "blog_posts",
-                    list: "/blog-posts",
-                    create: "/blog-posts/create",
-                    edit: "/blog-posts/edit/:id",
-                    show: "/blog-posts/show/:id",
-                    meta: {
-                      canDelete: true,
-                    },
-                  },
-                  {
-                    name: "categories",
-                    list: "/categories",
-                    create: "/categories/create",
-                    edit: "/categories/edit/:id",
-                    show: "/categories/show/:id",
-                    meta: {
-                      canDelete: true,
-                    },
+                    name: "properties",
+                    list: AllProperties,
+                    show: PropertyDetails,
+                    create: CreateProperty,
+                    edit: EditProperty,
+                    icon: <VillaOutlined />,
                   },
                 ]}
                 options={{
@@ -178,32 +203,30 @@ function App() {
                     element={
                       <Authenticated
                         key="authenticated-inner"
-                        fallback={<CatchAllNavigate to="/login" />}
+                        fallback={<Navigate to="/login" />}
                       >
                         <ThemedLayoutV2
-                          Header={() => <Header isSticky={true} />}
+                          Header={() => <Header sticky={true} />}
+                          Sider={() => <CustomSider />}
                         >
                           <Outlet />
                         </ThemedLayoutV2>
                       </Authenticated>
                     }
                   >
-                    <Route
-                      index
-                      element={<NavigateToResource resource="blog_posts" />}
-                    />
-                    <Route path="/blog-posts">
-                      <Route index element={<BlogPostList />} />
-                      <Route path="create" element={<BlogPostCreate />} />
-                      <Route path="edit/:id" element={<BlogPostEdit />} />
-                      <Route path="show/:id" element={<BlogPostShow />} />
+                    <Route index element={<CustomDashboard />} />
+
+                    {/* Properties routing */}
+                    <Route path="properties" element={<Outlet />}>
+                      <Route index element={<AllProperties />} />
+                      <Route path="create" element={<CreateProperty />} />
+                      <Route path=":id" element={<PropertyDetails />} />
+                      <Route path="edit/:id" element={<CreateProperty />} />
+
                     </Route>
-                    <Route path="/categories">
-                      <Route index element={<CategoryList />} />
-                      <Route path="create" element={<CategoryCreate />} />
-                      <Route path="edit/:id" element={<CategoryEdit />} />
-                      <Route path="show/:id" element={<CategoryShow />} />
-                    </Route>
+
+                    <Route path="agents" element={<Agents />} />
+                    {/* Add more routes for other resources as needed */}
                     <Route path="*" element={<ErrorComponent />} />
                   </Route>
                   <Route
@@ -216,10 +239,9 @@ function App() {
                       </Authenticated>
                     }
                   >
-                    <Route path="/login" element={<Login />} />
+                    <Route path="login" element={<Login />} />
                   </Route>
                 </Routes>
-
                 <RefineKbar />
                 <UnsavedChangesNotifier />
                 <DocumentTitleHandler />

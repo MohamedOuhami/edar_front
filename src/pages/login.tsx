@@ -8,9 +8,11 @@ import { ThemedTitleV2 } from "@refinedev/mui";
 
 import { CredentialResponse } from "../interfaces/google";
 
+import { yariga } from "assets";
+
 // Todo: Update your Google Client ID here
 const GOOGLE_CLIENT_ID =
-  "1041339102270-e1fpe2b6v6u1didfndh7jkjmpcashs4f.apps.googleusercontent.com";
+  "620084118698-1mkasq2ruvqk01hv3ecsc3chc5o3nn3r.apps.googleusercontent.com";
 
 export const Login: React.FC = () => {
   const { mutate: login } = useLogin<CredentialResponse>();
